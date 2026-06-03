@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Données (trop volumineuses pour Git)
+data/*.csv
+data/*.pcap
+*.zip
+
+# Modèles entraînés (trop volumineux, regénérés par main.py)
+outputs/models/*.joblib
+
+# IDE / éditeur
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
