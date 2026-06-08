@@ -182,10 +182,16 @@ def plot_metrics_comparison(
     """Barplot groupé pour comparer les métriques entre modèles."""
     if metrics is None:
         metrics = ["Accuracy", "Precision", "Recall", "F1-score", "ROC-AUC"]
+    
+    # Filtrer les métriques pour ne garder que celles présentes dans le DataFrame
+    available_metrics = [m for m in metrics if m in results.columns]
+    if not available_metrics:
+        # Si aucune métrique commune, utiliser toutes les colonnes sauf "Modèle" et "Temps (s)"
+        available_metrics = [col for col in results.columns if col not in ["Modèle", "Temps (s)"]]
 
     results_melted = results.melt(
         id_vars="Modèle",
-        value_vars=metrics,
+        value_vars=available_metrics,
         var_name="Métrique",
         value_name="Score",
     )

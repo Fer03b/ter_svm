@@ -78,7 +78,10 @@ def prepare_features_labels(
     benign_label: str = "BENIGN",
 ) -> Tuple[pd.DataFrame, pd.Series]:
     """
+    ⚠ DEPRECATED : Utilisez prepare_features_labels_multiclass() pour la classification multi-classe.
+    
     Sépare les features (X) du label (y) et convertit le label en binaire.
+    Conservé pour compatibilité avec ancien code.
 
     Parameters
     ----------
@@ -99,10 +102,57 @@ def prepare_features_labels(
     y = (df[label_column] != benign_label).astype(int)
     X = df.drop(columns=[label_column])
 
-    print(f"\n=== Préparation features/label ===")
+    print(f"\n=== Préparation features/label (BINAIRE - DEPRECATED) ===")
     print(f"  Features : {X.shape}")
     print(f"  Label    : {y.shape}")
     print(f"  Distribution : {dict(y.value_counts())}")
+
+    return X, y
+
+
+def prepare_features_labels_multiclass(
+    df: pd.DataFrame,
+    label_column: str = "Label",
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """
+    Sépare les features (X) du label (y) en CONSERVANT les labels textuels.
+    
+    Cette fonction préserve les chaînes de caractères du label original 
+    (ex: "DDoS", "Botnet", "BENIGN") pour une classification multi-classe.
+    Les algorithmes de scikit-learn gèrent nativement ces labels textuels.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataset nettoyé.
+    label_column : str
+        Nom de la colonne contenant le label (ex: "Label").
+
+    Returns
+    -------
+    X : pd.DataFrame
+        Features (tout sauf la colonne label).
+    y : pd.Series
+        Labels textuels (chaînes de caractères) → classification multi-classe.
+    """
+    # Conserver les labels TEXTUELS (multi-classe)
+    y = df[label_column].astype(str)  # Assure que c'est du texte
+    X = df.drop(columns=[label_column])
+
+    # Récupérer les classes uniques et leur distribution
+    class_distribution = y.value_counts().to_dict()
+    class_proportions = (y.value_counts(normalize=True) * 100).round(2).to_dict()
+    n_classes = y.nunique()
+
+    print(f"\n=== Préparation features/label (MULTI-CLASSE) ===")
+    print(f"  Features : {X.shape}")
+    print(f"  Label    : {y.shape}")
+    print(f"  Nombre de classes : {n_classes}")
+    print(f"  Distribution des classes :")
+    for label in sorted(class_distribution.keys()):
+        count = class_distribution[label]
+        pct = class_proportions[label]
+        print(f"    - {label:<20} : {count:>10,}  ({pct:>6.2f}%)")
 
     return X, y
 
@@ -114,14 +164,17 @@ def split_data(
     random_state: int = 42,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """
-    Split stratifié train/test.
+    ⚠ DEPRECATED : Utilisez split_data_multiclass() pour la classification multi-classe.
+    
+    Split stratifié train/test pour classification BINAIRE.
+    Conservé pour compatibilité avec ancien code.
 
     Parameters
     ----------
     X : pd.DataFrame
         Features.
     y : pd.Series
-        Label.
+        Label (binaire 0/1).
     test_size : float
         Proportion du test set.
     random_state : int
@@ -135,9 +188,71 @@ def split_data(
         X, y, test_size=test_size, random_state=random_state, stratify=y,
     )
 
-    print(f"\n=== Split stratifié ({int((1-test_size)*100)}/{int(test_size*100)}) ===")
+    print(f"\n=== Split stratifié ({int((1-test_size)*100)}/{int(test_size*100)}) - BINAIRE ===")
     print(f"  Train : {X_train.shape[0]:,} — attaques : {y_train.mean()*100:.2f}%")
     print(f"  Test  : {X_test.shape[0]:,} — attaques : {y_test.mean()*100:.2f}%")
+
+    return X_train, X_test, y_train, y_test
+
+
+def split_data_multiclass(
+    X: pd.DataFrame,
+    y: pd.Series,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    """
+    Split stratifié train/test pour classification MULTI-CLASSE.
+    
+    Utilise stratify=y pour maintenir l'équilibre des classes textuelles
+    dans train et test. Les labels textuels sont préservés.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Features.
+    y : pd.Series
+        Labels textuels (ex: "BENIGN", "DDoS", "Botnet", ...).
+    test_size : float
+        Proportion du test set (défaut 0.2 = 80/20).
+    random_state : int
+        Graine aléatoire pour reproductibilité.
+
+    Returns
+    -------
+    X_train, X_test, y_train, y_test : Tuple
+        Features et labels pour train/test (labels conservent les textes).
+    """
+    # Split stratifié avec labels textuels
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, 
+        test_size=test_size, 
+        random_state=random_state, 
+        stratify=y,  # Stratify sur les labels textuels (multi-classe)
+    )
+
+    # Résumé du split
+    train_prop = (1 - test_size) * 100
+    test_prop = test_size * 100
+    
+    print(f"\n=== Split stratifié ({int(train_prop)}/{int(test_prop)}) - MULTI-CLASSE ===")
+    print(f"  Train : {X_train.shape[0]:,} samples")
+    print(f"  Test  : {X_test.shape[0]:,} samples")
+    
+    # Distribution des classes dans train et test
+    print(f"\n  Distribution classes (TRAIN) :")
+    train_dist = y_train.value_counts(normalize=True) * 100
+    for label in sorted(train_dist.index):
+        pct = train_dist[label]
+        count = y_train.value_counts()[label]
+        print(f"    - {label:<20} : {count:>10,}  ({pct:>6.2f}%)")
+    
+    print(f"\n  Distribution classes (TEST) :")
+    test_dist = y_test.value_counts(normalize=True) * 100
+    for label in sorted(test_dist.index):
+        pct = test_dist[label]
+        count = y_test.value_counts()[label]
+        print(f"    - {label:<20} : {count:>10,}  ({pct:>6.2f}%)")
 
     return X_train, X_test, y_train, y_test
 

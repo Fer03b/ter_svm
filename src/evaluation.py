@@ -23,25 +23,25 @@ from sklearn.metrics import (
 
 
 def evaluate_model(
-    name: str,
     y_true: np.ndarray,
     y_pred: np.ndarray,
-    y_score: np.ndarray,
+    y_score: np.ndarray = None,
+    average: str = "weighted",
     training_time: float = None,
 ) -> dict:
     """
-    Calcule toutes les métriques d'évaluation pour un modèle.
+    Calcule toutes les métriques d'évaluation pour un modèle (multi-classe ou binaire).
 
     Parameters
     ----------
-    name : str
-        Nom du modèle (pour l'identification dans le tableau).
     y_true : np.ndarray
         Labels réels.
     y_pred : np.ndarray
-        Prédictions binaires (0/1).
-    y_score : np.ndarray
+        Prédictions.
+    y_score : np.ndarray, optional
         Scores de probabilité ou decision_function.
+    average : str, optional
+        Type de moyenning pour multi-classe ("weighted", "macro", "micro").
     training_time : float, optional
         Temps d'entraînement en secondes.
 
@@ -50,17 +50,11 @@ def evaluate_model(
     dict
         Dictionnaire avec toutes les métriques.
     """
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
-
     metrics = {
-        "Modèle": name,
         "Accuracy": accuracy_score(y_true, y_pred),
-        "Precision": precision_score(y_true, y_pred),
-        "Recall": recall_score(y_true, y_pred),
-        "F1-score": f1_score(y_true, y_pred),
-        "Taux FP": fpr,
-        "ROC-AUC": roc_auc_score(y_true, y_score),
+        "Precision": precision_score(y_true, y_pred, average=average, zero_division=0),
+        "Recall": recall_score(y_true, y_pred, average=average, zero_division=0),
+        "F1-score": f1_score(y_true, y_pred, average=average, zero_division=0),
     }
 
     if training_time is not None:
@@ -70,32 +64,34 @@ def evaluate_model(
 
 
 def print_classification_report(
-    name: str,
     y_true: np.ndarray,
     y_pred: np.ndarray,
-    y_score: np.ndarray,
 ) -> None:
-    """Affiche le rapport de classification détaillé pour un modèle."""
-    print(f"\n=== {name} ===")
-    print(classification_report(y_true, y_pred, target_names=["BENIGN", "ATTACK"]))
-    print(f"ROC-AUC : {roc_auc_score(y_true, y_score):.4f}")
+    """Affiche le rapport de classification détaillé."""
+    print(classification_report(y_true, y_pred, zero_division=0))
 
 
-def build_comparison_table(results: list) -> pd.DataFrame:
+def build_comparison_table(results: dict) -> pd.DataFrame:
     """
     Construit le tableau de comparaison des modèles.
 
     Parameters
     ----------
-    results : list of dict
-        Liste des résultats produits par evaluate_model().
+    results : dict
+        Dictionnaire où les clés sont les noms des modèles 
+        et les valeurs sont les dictionnaires de métriques.
 
     Returns
     -------
     pd.DataFrame
         Tableau de comparaison.
     """
-    df = pd.DataFrame(results)
+    rows = []
+    for model_name, metrics in results.items():
+        row = {"Modèle": model_name}
+        row.update(metrics)
+        rows.append(row)
+    df = pd.DataFrame(rows)
     return df
 
 

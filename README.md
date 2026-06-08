@@ -1,99 +1,68 @@
-# TER M1 RSA — Détection d'attaques réseau par Machine Learning
+# Pipeline de Classification Multi-Classe — TER M1 RSA
 
-Système de Détection d'Intrusion (IDS) basé sur des techniques de Machine Learning,
-appliqué au dataset CICIDS2017.
+Pipeline complet du projet TER — **Classification MULTI-CLASSE** avec CICIDS2017.
 
-## Objectifs (extrait du sujet)
+## Description
 
-Concevoir et évaluer un système de détection d'intrusion basé sur le Machine Learning,
-puis comparer ses performances avec une approche IDS traditionnelle.
+Ce script implémenter un pipeline complet de classification multi-classe pour la détection d'attaques réseau. 
+Les labels sont conservés en texte (ex: "BENIGN", "DDoS", "Botnet") au lieu d'être convertis en binaire.
 
-## Modèles implémentés
+## Étapes du pipeline
 
-- **Random Forest** (méthode d'ensemble)
-- **SVM** — LinearSVC et SVC avec noyau RBF (méthode à noyau)
-- **MLP** (réseau de neurones simple, 2 couches cachées)
+1. **Chargement et exploration** — Charge tous les fichiers CSV du dossier `data/` par portions de 50 000 lignes
+2. **Nettoyage** — Suppression des NaN, Inf, doublons
+3. **Préparation multi-classe** — Prépare features/labels en gardant les labels textuels
+4. **Split stratifié** — Split train/test stratifié adapté au multi-classe
+5. **Sélection de features** — Filtrage par variance et corrélation
+6. **Normalisation** — Normalisation des features
+7. **Entraînement des modèles** — Quatre modèles entraînés nativement pour le multi-classe
+8. **Évaluation** — Évaluation avec `average="weighted"` pour le multi-classe
+9. **Visualisations** — Génération des graphiques et sauvegarde des résultats
 
-## Structure du projet
+## Modèles entraînés
 
-```
-ter_ids_ml/
-├── README.md             # Ce fichier
-├── requirements.txt      # Dépendances Python
-├── config.py             # Configuration centrale (chemins, hyperparamètres)
-├── main.py               # Pipeline complet
-│
-├── data/                 # Fichiers CSV de CICIDS2017 à placer ici
-│
-├── outputs/              # Résultats générés (créé automatiquement)
-│   ├── figures/          # Graphiques (.png)
-│   ├── models/           # Modèles entraînés (.joblib)
-│   └── results/          # Tableaux de résultats (.csv)
-│
-└── src/                  # Code source modulaire
-    ├── data_loader.py    # Chargement du dataset
-    ├── preprocessing.py  # Nettoyage, sélection, split, normalisation
-    ├── models.py         # Entraînement des modèles
-    ├── evaluation.py     # Métriques (accuracy, F1, taux FP, etc.)
-    └── visualization.py  # Graphiques (ROC, matrices de confusion, etc.)
-```
-
-## Installation
-
-### Prérequis
-- Python 3.10+
-- pip
-
-### Installation des dépendances
-
-```bash
-pip install -r requirements.txt
-```
-
-### Téléchargement du dataset
-
-1. Téléchargez CICIDS2017 (version MachineLearningCSV) sur :
-   https://www.unb.ca/cic/datasets/ids-2017.html
-2. Placez le fichier CSV dans le dossier `data/`
-3. Le fichier par défaut attendu est :
-   `data/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv`
-4. Pour utiliser un autre fichier, modifiez `DATA_FILENAME` dans `config.py`
+- **Random Forest** (100 estimateurs, max_depth=20)
+- **SVM Linéaire** (kernel linéaire, C=1.0, max_iter=1000)
+- **SVM RBF** (kernel RBF, C=1.0, gamma='scale')
+- **MLP** (2 couches cachées 128-64, solver='adam', max_iter=500)
 
 ## Utilisation
 
-### Pipeline complet (recommandé)
-
 ```bash
-python main.py
+python main_multiclass.py
 ```
 
-Cela lance l'intégralité du pipeline :
-1. Chargement et exploration des données
-2. Nettoyage (suppression des NaN, Inf, doublons)
-3. Sélection des features (variance, corrélation, importance)
-4. Split train/test stratifié + normalisation
-5. Entraînement des 4 modèles (RF, SVM linéaire, SVM RBF, MLP)
-6. Évaluation et comparaison
-7. Génération des figures et sauvegarde des résultats
+## Résultats générés
 
-### Résultats produits
+### Modèles
+- `outputs/models/random_forest_multiclass.joblib`
+- `outputs/models/svm_linear_multiclass.joblib`
+- `outputs/models/svm_rbf_multiclass.joblib`
+- `outputs/models/mlp_multiclass.joblib`
+- `outputs/models/scaler_multiclass.joblib`
 
-- **`outputs/figures/`** : graphiques (distribution des classes, importance des features,
-  matrice de corrélation, courbes ROC, matrices de confusion, comparaison des métriques)
-- **`outputs/models/`** : modèles entraînés au format joblib (rechargeables sans réentraînement)
-- **`outputs/results/`** : tableau de comparaison des modèles et importance des features (CSV)
+### Figures
+- `outputs/figures/01_class_distribution_multiclass.png` — Distribution des classes
+- `outputs/figures/confusion_matrices_multiclass.png` — Matrices de confusion (4 modèles)
+- `outputs/figures/metrics_comparison_multiclass.png` — Comparaison des métriques
+- `outputs/figures/feature_importance_multiclass.png` — Top 20 features (Random Forest)
+
+### Résultats
+- `outputs/results/comparison_table_multiclass.csv` — Tableau comparatif des modèles
 
 ## Métriques évaluées
 
-Conformément au sujet :
+Pour chaque modèle (average="weighted") :
 - Accuracy
 - Précision
 - Rappel (Recall)
 - F1-score
-- **Taux de faux positifs (FPR)**
-- ROC-AUC
-- Temps d'entraînement
 
-## Auteur
+## Configuration
 
-Projet TER M1 RSA — Année universitaire 2025-2026
+Modifiez `config.py` pour ajuster :
+- `DATA_DIR` — Dossier contenant les fichiers CSV
+- `LABEL_COLUMN` — Colonne des labels (par défaut: "Label")
+- `TEST_SIZE` — Proportion du test set (par défaut: 0.2)
+- `CORRELATION_THRESHOLD` — Seuil de corrélation pour la sélection de features
+- `RANDOM_STATE` — Graine aléatoire pour la reproductibilité

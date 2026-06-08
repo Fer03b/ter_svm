@@ -24,7 +24,7 @@ for d in (FIGURES_DIR, MODELS_DIR, RESULTS_DIR):
 # Dataset
 # ============================================================
 # Nom du fichier CSV à analyser (à placer dans data/)
-DATA_PATH = Path(r"D:\MachineLearningCSV\MachineLearningCVE\Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv")
+DATA_PATH = Path(r"data/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv")
 DATA_FILENAME = DATA_PATH.name
 
 # Nom de la colonne contenant le label
