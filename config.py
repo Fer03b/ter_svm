@@ -52,6 +52,16 @@ CORRELATION_THRESHOLD = 0.95
 VARIANCE_THRESHOLD = 0.0
 
 # ============================================================
+# Dataset déjà préparé (skip pipeline de nettoyage/feature selection/normalisation)
+# ============================================================
+USE_PREPARED_DATASET = True
+PREPARED_DATA_DIR = ROOT_DIR / "prepared1"
+PREPARED_X_TRAIN = PREPARED_DATA_DIR / "X_train_scaled.csv"
+PREPARED_X_TEST = PREPARED_DATA_DIR / "X_test_scaled.csv"
+PREPARED_Y_TRAIN = PREPARED_DATA_DIR / "y_train.csv"
+PREPARED_Y_TEST = PREPARED_DATA_DIR / "y_test.csv"
+
+# ============================================================
 # Hyperparamètres des modèles
 # ============================================================
 # Random Forest

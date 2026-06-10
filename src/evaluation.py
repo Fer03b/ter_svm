@@ -22,34 +22,12 @@ from sklearn.metrics import (
 )
 
 
-def evaluate_model(
+def _compute_metrics(
     y_true: np.ndarray,
     y_pred: np.ndarray,
-    y_score: np.ndarray = None,
     average: str = "weighted",
     training_time: float = None,
 ) -> dict:
-    """
-    Calcule toutes les métriques d'évaluation pour un modèle (multi-classe ou binaire).
-
-    Parameters
-    ----------
-    y_true : np.ndarray
-        Labels réels.
-    y_pred : np.ndarray
-        Prédictions.
-    y_score : np.ndarray, optional
-        Scores de probabilité ou decision_function.
-    average : str, optional
-        Type de moyenning pour multi-classe ("weighted", "macro", "micro").
-    training_time : float, optional
-        Temps d'entraînement en secondes.
-
-    Returns
-    -------
-    dict
-        Dictionnaire avec toutes les métriques.
-    """
     metrics = {
         "Accuracy": accuracy_score(y_true, y_pred),
         "Precision": precision_score(y_true, y_pred, average=average, zero_division=0),
@@ -63,12 +41,58 @@ def evaluate_model(
     return metrics
 
 
+def evaluate_model(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    y_score: np.ndarray = None,
+    average="weighted",
+    training_time: float = None,
+) -> dict:
+    """
+    Calcule toutes les métriques d'évaluation pour un modèle (multi-classe ou binaire).
+
+    Parameters
+    ----------
+    y_true : np.ndarray
+        Labels réels.
+    y_pred : np.ndarray
+        Prédictions.
+    y_score : np.ndarray, optional
+        Scores de probabilité ou decision_function.
+    average : str or tuple/list, optional
+        Type de moyenning pour multi-classe ("weighted", "macro", "micro")
+        ou un ensemble d'averages pour calculer plusieurs versions.
+    training_time : float, optional
+        Temps d'entraînement en secondes.
+
+    Returns
+    -------
+    dict
+        Dictionnaire avec toutes les métriques ou
+        un dictionnaire de dictionnaires si plusieurs averages sont demandés.
+    """
+    if isinstance(average, (list, tuple)):
+        return {
+            avg: _compute_metrics(y_true, y_pred, average=avg, training_time=training_time)
+            for avg in average
+        }
+
+    return _compute_metrics(y_true, y_pred, average=average, training_time=training_time)
+
+
 def print_classification_report(
     y_true: np.ndarray,
     y_pred: np.ndarray,
+    zero_division: int = 0,
+    digits: int = 4,
 ) -> None:
     """Affiche le rapport de classification détaillé."""
-    print(classification_report(y_true, y_pred, zero_division=0))
+    print(classification_report(
+        y_true,
+        y_pred,
+        zero_division=zero_division,
+        digits=digits,
+    ))
 
 
 def build_comparison_table(results: dict) -> pd.DataFrame:
