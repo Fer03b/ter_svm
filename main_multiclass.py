@@ -34,6 +34,8 @@ from src.evaluation import (
     identify_best_model,
     print_classification_report,
     print_comparison_table,
+    print_per_class_prediction_summary,
+    save_per_class_prediction_summary,
 )
 from src.models import (
     get_predictions,
@@ -50,6 +52,7 @@ from src.preprocessing import (
 from src.visualization import (
     plot_class_distribution,
     plot_confusion_matrices,
+    plot_confusion_matrix_multiclass,
     plot_correlation_matrix,
     plot_feature_importance,
     plot_metrics_comparison,
@@ -268,6 +271,21 @@ def main():
     )
     print_classification_report(y_test, y_pred_svm_lin)
     print_metrics_table(metrics_svm_lin, "SVM Linéaire")
+    
+    # Évaluation détaillée par classe
+    print_per_class_prediction_summary(y_test, y_pred_svm_lin)
+    save_per_class_prediction_summary(
+        y_test, y_pred_svm_lin, 
+        model_name="svm_linear",
+        output_dir=str(config.RESULTS_DIR)
+    )
+    
+    # Matrice de confusion en image
+    plot_confusion_matrix_multiclass(
+        y_test, y_pred_svm_lin,
+        model_name="SVM Linéaire",
+        output_path=config.FIGURES_DIR / "confusion_matrix_svm_linear.png",
+    )
 
     print("\n" + "-" * 70)
     print("SVM RBF")
@@ -277,6 +295,21 @@ def main():
     )
     print_classification_report(y_test, y_pred_svm_rbf)
     print_metrics_table(metrics_svm_rbf, "SVM RBF")
+    
+    # Évaluation détaillée par classe
+    print_per_class_prediction_summary(y_test, y_pred_svm_rbf)
+    save_per_class_prediction_summary(
+        y_test, y_pred_svm_rbf, 
+        model_name="svm_rbf",
+        output_dir=str(config.RESULTS_DIR)
+    )
+    
+    # Matrice de confusion en image
+    plot_confusion_matrix_multiclass(
+        y_test, y_pred_svm_rbf,
+        model_name="SVM RBF",
+        output_path=config.FIGURES_DIR / "confusion_matrix_svm_rbf.png",
+    )
 
     # Tableau de comparaison
     print("\n" + "=" * 70)

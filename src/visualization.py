@@ -173,6 +173,59 @@ def plot_confusion_matrices(
     _save_figure(output_path, dpi)
 
 
+def plot_confusion_matrix_multiclass(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    model_name: str,
+    output_path: Path,
+    dpi: int = 150,
+) -> None:
+    """
+    Matrice de confusion pour classification multi-classe.
+    
+    Parameters
+    ----------
+    y_true : np.ndarray
+        Labels réels.
+    y_pred : np.ndarray
+        Prédictions.
+    model_name : str
+        Nom du modèle (pour le titre).
+    output_path : Path
+        Chemin de sortie.
+    dpi : int
+        Résolution de l'image.
+    """
+    # Obtenir les labels
+    labels = sorted(pd.unique(pd.concat([
+        pd.Series(y_true),
+        pd.Series(y_pred)
+    ])))
+    
+    # Créer la matrice de confusion
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    
+    # Déterminer la taille en fonction du nombre de classes
+    n_classes = len(labels)
+    figsize = (max(10, n_classes), max(8, n_classes))
+    
+    plt.figure(figsize=figsize)
+    sns.heatmap(
+        cm, 
+        annot=True, 
+        fmt="d", 
+        cmap="Blues", 
+        xticklabels=labels,
+        yticklabels=labels,
+        cbar_kws={"label": "Nombre de prédictions"},
+    )
+    plt.xlabel("Prédiction", fontsize=12)
+    plt.ylabel("Réel", fontsize=12)
+    plt.title(f"Matrice de confusion — {model_name}", fontsize=14, fontweight="bold")
+    plt.tight_layout()
+    _save_figure(output_path, dpi)
+
+
 def plot_metrics_comparison(
     results: pd.DataFrame,
     output_path: Path,

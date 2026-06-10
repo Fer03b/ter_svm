@@ -9,6 +9,7 @@ Métriques calculées (toutes exigées par le sujet) :
   - Taux de faux positifs (FPR)
   - ROC-AUC (en complément)
 """
+import os
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (
@@ -156,3 +157,72 @@ def identify_best_model(df: pd.DataFrame, metric: str = "F1-score") -> str:
     best_score = df.loc[best_idx, metric]
     print(f"\n→ Meilleur modèle selon {metric} : {best_name} ({best_score:.4f})")
     return best_name
+
+
+def print_per_class_prediction_summary(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+) -> None:
+    """Affiche un résumé texte par classe des prédictions et des erreurs."""
+    y_true = pd.Series(y_true, name="Actual")
+    y_pred = pd.Series(y_pred, name="Predicted")
+    labels = sorted(pd.unique(pd.concat([y_true, y_pred])))
+
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    df_cm = pd.DataFrame(cm, index=labels, columns=labels)
+
+    print("\n=== Résumé des prédictions par classe ===")
+    for actual in labels:
+        total = int(df_cm.loc[actual].sum())
+        correct = int(df_cm.loc[actual, actual])
+        incorrect = total - correct
+        accuracy = correct / total if total > 0 else 0.0
+        print(f"Classe '{actual}': réel={total}, correct={correct}, incorrect={incorrect}, accuracy={accuracy:.4f}")
+        row = df_cm.loc[actual]
+        row_str = "; ".join(f"{pred}={int(cnt)}" for pred, cnt in row.items() if cnt > 0)
+        print(f"  Prédictions par classe : {row_str}")
+
+    print("\n=== Matrice de confusion (Réel x Prédit) ===")
+    print(df_cm.to_string())
+
+
+def save_per_class_prediction_summary(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    model_name: str = "model",
+    output_dir: str = "outputs",
+) -> None:
+    """Enregistre les résultats d'évaluation par classe en fichiers CSV."""
+    os.makedirs(output_dir, exist_ok=True)
+    
+    y_true = pd.Series(y_true, name="Actual")
+    y_pred = pd.Series(y_pred, name="Predicted")
+    labels = sorted(pd.unique(pd.concat([y_true, y_pred])))
+
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    df_cm = pd.DataFrame(cm, index=labels, columns=labels)
+
+    # Créer le résumé par classe
+    summary_data = []
+    for actual in labels:
+        total = int(df_cm.loc[actual].sum())
+        correct = int(df_cm.loc[actual, actual])
+        incorrect = total - correct
+        accuracy = correct / total if total > 0 else 0.0
+        summary_data.append({
+            "Classe": actual,
+            "Réel": total,
+            "Correct": correct,
+            "Incorrect": incorrect,
+            "Accuracy": round(accuracy, 4),
+        })
+    
+    df_summary = pd.DataFrame(summary_data)
+    summary_path = os.path.join(output_dir, f"per_class_summary_{model_name}.csv")
+    df_summary.to_csv(summary_path, index=False)
+    print(f"\n✓ Résumé par classe enregistré : {summary_path}")
+
+    # Enregistrer la matrice de confusion
+    cm_path = os.path.join(output_dir, f"confusion_matrix_{model_name}.csv")
+    df_cm.to_csv(cm_path)
+    print(f"✓ Matrice de confusion enregistrée : {cm_path}")
