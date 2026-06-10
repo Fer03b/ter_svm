@@ -395,7 +395,7 @@ def main():
     print("=" * 70)
 
     # Résumé du pipeline
-    best_metrics = metrics_svm_lin if best_model_name == "SVM Linear" else metrics_svm_rbf
+    best_metrics = (metrics_svm_lin if best_model_name == "SVM Linear" else metrics_svm_rbf)["weighted"]
     if prepared_mode:
         summary = {
             "Pipeline": "Multi-classe (dataset préparé)",
